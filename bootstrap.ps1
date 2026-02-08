@@ -1,10 +1,12 @@
 param(
   [Parameter(Mandatory=$true)]
-  [string]$OneDriveZipUrl
+  [string]$OneDriveZipUrl,
+  [Parameter(Mandatory=$true)]
+  [string]$ExecutionId
 )
 
 $ErrorActionPreference = "Stop"
-
+Write-Host "Bootstrap script started with ExecutionId: $ExecutionId"
 # ==========================
 # Config
 # ==========================

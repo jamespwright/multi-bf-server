@@ -35,7 +35,8 @@ az vm create `
 # ==========================
 # Apply Custom Script Extension
 # ==========================
-$commandToExecute = "powershell -ExecutionPolicy Bypass -Command \`"iwr $bootstrapScriptUrl -OutFile C:\bootstrap.ps1; powershell -ExecutionPolicy Bypass -File C:\bootstrap.ps1 -OneDriveZipUrl '$oneDriveZipUrl'\`""
+$ExecutionId = [Guid]::NewGuid().ToString()
+$commandToExecute = "powershell -ExecutionPolicy Bypass -Command \`"iwr $bootstrapScriptUrl -OutFile C:\bootstrap.ps1; powershell -ExecutionPolicy Bypass -File C:\bootstrap.ps1 -OneDriveZipUrl '$oneDriveZipUrl' -ExecutionId '$ExecutionId' \`""
 $settingsJson = @{commandToExecute = $commandToExecute} | ConvertTo-Json -Compress
 
 # Save JSON to temp file to avoid PowerShell escaping issues
