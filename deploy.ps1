@@ -35,14 +35,19 @@ az vm create `
 # ==========================
 # Apply Custom Script Extension
 # ==========================
-$settingsObj = @{
-    commandToExecute = "powershell -ExecutionPolicy Bypass -Command `"iwr $bootstrapScriptUrl -OutFile C:\bootstrap.ps1; powershell -ExecutionPolicy Bypass -File C:\bootstrap.ps1 -OneDriveZipUrl '$oneDriveZipUrl'`""
-}
-$settingsJson = ($settingsObj | ConvertTo-Json -Compress)
+$commandToExecute = "powershell -ExecutionPolicy Bypass -Command \`"iwr $bootstrapScriptUrl -OutFile C:\bootstrap.ps1; powershell -ExecutionPolicy Bypass -File C:\bootstrap.ps1 -OneDriveZipUrl '$oneDriveZipUrl'\`""
+$settingsJson = @{commandToExecute = $commandToExecute} | ConvertTo-Json -Compress
+
+# Save JSON to temp file to avoid PowerShell escaping issues
+$tempSettingsFile = Join-Path $env:TEMP "vm-extension-settings.json"
+$settingsJson | Out-File -FilePath $tempSettingsFile -Encoding utf8 -NoNewline
 
 az vm extension set `
   --resource-group $resourceGroup `
   --vm-name $vmName `
   --name CustomScriptExtension `
   --publisher Microsoft.Compute `
-  --settings $settingsJson
+  --settings "@$tempSettingsFile"
+
+# Clean up temp file
+Remove-Item $tempSettingsFile -ErrorAction SilentlyContinue

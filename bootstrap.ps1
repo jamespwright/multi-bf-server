@@ -17,6 +17,7 @@ $zipPath     = "$installRoot\server.zip"
 New-Item -ItemType Directory -Force -Path $installRoot
 Set-Location $installRoot
 
+Start-Transcript -Path "$installRoot\bootstrap.log" -NoClobber
 # ==========================
 # Download game server files
 # ==========================
@@ -29,6 +30,7 @@ Invoke-WebRequest `
 # ==========================
 # Extract
 # ==========================
+Write-Host "Extracting game server files..."
 Expand-Archive `
   -Path $zipPath `
   -DestinationPath $installRoot `
@@ -38,3 +40,6 @@ Expand-Archive `
 # Cleanup
 # ==========================
 Remove-Item -Path $zipPath -Force
+
+Write-Host "Bootstrap complete. Game server files are located at $installRoot"
+Stop-Transcript
