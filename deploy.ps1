@@ -23,6 +23,7 @@ az group create `
 # ==========================
 # Create VM
 # ==========================
+Write-Host "Creating VM $vmName in resource group $resourceGroup..."
 az vm create `
   --resource-group $resourceGroup `
   --name $vmName `
@@ -35,20 +36,17 @@ az vm create `
 # ==========================
 # Apply Custom Script Extension
 # ==========================
+Write-Host "Applying Custom Script Extension to VM $vmName..."
 $ExecutionId = [Guid]::NewGuid().ToString()
-$commandToExecute = "powershell -ExecutionPolicy Bypass -Command \`"iwr $bootstrapScriptUrl -OutFile C:\bootstrap.ps1; powershell -ExecutionPolicy Bypass -File C:\bootstrap.ps1 -OneDriveZipUrl '$oneDriveZipUrl' -ExecutionId '$ExecutionId' \`""
-$settingsJson = @{commandToExecute = $commandToExecute} | ConvertTo-Json -Compress
+$commandToExecute = "powershell -ExecutionPolicy Bypass -Command Invoke-WebRequest $bootstrapScriptUrl -OutFile C:\bootstrap.ps1; powershell -ExecutionPolicy Bypass -Command C:\bootstrap.ps1 -OneDriveZipUrl 'Test' -ExecutionId '$ExecutionId'"
 
-# Save JSON to temp file to avoid PowerShell escaping issues
-$tempSettingsFile = Join-Path $env:TEMP "vm-extension-settings.json"
-$settingsJson | Out-File -FilePath $tempSettingsFile -Encoding utf8 -NoNewline
+# Compress JSON and escape quotes for Azure CLI compatibility
+$settingsJson = @{commandToExecute = $commandToExecute} | ConvertTo-Json -Compress
+$settingsJson = $settingsJson.Replace('"', '\"')
 
 az vm extension set `
   --resource-group $resourceGroup `
   --vm-name $vmName `
   --name CustomScriptExtension `
   --publisher Microsoft.Compute `
-  --settings "@$tempSettingsFile"
-
-# Clean up temp file
-Remove-Item $tempSettingsFile -ErrorAction SilentlyContinue
+  --settings "$settingsJson"

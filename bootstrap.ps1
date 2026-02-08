@@ -7,10 +7,10 @@ param(
 
 $ErrorActionPreference = "Stop"
 Write-Host "Bootstrap script started with ExecutionId: $ExecutionId"
-# ==========================
-# Config
-# ==========================
-$installRoot = "D:\GameServer"
+ # ==========================
+ # Config
+ # ==========================
+$installRoot = "C:\GameServer"
 $zipPath     = "$installRoot\server.zip"
 
 # ==========================
