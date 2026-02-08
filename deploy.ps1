@@ -1,14 +1,17 @@
 # ==========================
 # Config
 # ==========================
-$resourceGroup = "bfbc2-rg"
+$resourceGroup = "rg-bf-multi-server"
 $location      = "australiaeast"
-$vmName        = "bfbc2-vm"
+$vmName        = "bf-multi-server"
 $vmSize        = "Standard_D4s_v5"
 $adminUser     = "azureuser"
-$adminPassword = "REPLACE_WITH_STRONG_PASSWORD"
+$adminPassword = Read-Host -Prompt "Enter admin password" -AsSecureString
+$adminPasswordPlain = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($adminPassword))
+$bootstrapScriptUrl = "https://raw.githubusercontent.com/jamespwright/multi-bf-server/main/bootstrap.ps1"
+$oneDriveZipUrl = Read-Host -Prompt "Enter OneDrive direct download URL for game server zip file"
 
-$bootstrapScriptUrl = "https://raw.githubusercontent.com/YOURORG/YOURREPO/main/bootstrap.ps1"
+az login
 
 # ==========================
 # Create Resource Group
@@ -26,28 +29,20 @@ az vm create `
   --image Win2022Datacenter `
   --size $vmSize `
   --admin-username $adminUser `
-  --admin-password $adminPassword `
+  --admin-password $adminPasswordPlain `
   --public-ip-sku Standard
-
-# ==========================
-# Open Game Port (UDP 19567)
-# ==========================
-az vm open-port `
-  --resource-group $resourceGroup `
-  --name $vmName `
-  --port 19567 `
-  --protocol UDP
 
 # ==========================
 # Apply Custom Script Extension
 # ==========================
+$settingsObj = @{
+    commandToExecute = "powershell -ExecutionPolicy Bypass -Command `"iwr $bootstrapScriptUrl -OutFile C:\bootstrap.ps1; powershell -ExecutionPolicy Bypass -File C:\bootstrap.ps1 -OneDriveZipUrl '$oneDriveZipUrl'`""
+}
+$settingsJson = ($settingsObj | ConvertTo-Json -Compress)
+
 az vm extension set `
   --resource-group $resourceGroup `
   --vm-name $vmName `
   --name CustomScriptExtension `
   --publisher Microsoft.Compute `
-  --settings @"
-{
-  "commandToExecute": "powershell -ExecutionPolicy Bypass -Command `"iwr $bootstrapScriptUrl -OutFile C:\\bootstrap.ps1; powershell -ExecutionPolicy Bypass -File C:\\bootstrap.ps1`""
-}
-"@
+  --settings $settingsJson
