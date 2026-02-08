@@ -19,7 +19,7 @@ $zipPath     = "$installRoot\server.zip"
 New-Item -ItemType Directory -Force -Path $installRoot
 Set-Location $installRoot
 
-Start-Transcript -Path "$installRoot\bootstrap.log" -NoClobber
+Start-Transcript -Path "$installRoot\bootstrap.log" -Append
 # ==========================
 # Download game server files
 # ==========================
