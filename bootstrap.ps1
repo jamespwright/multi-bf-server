@@ -18,7 +18,7 @@ if (-not (Get-Command choco -ErrorAction SilentlyContinue)) {
     Write-Host "Installing Chocolatey..."
     Set-ExecutionPolicy Bypass -Scope Process -Force
     [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12
-    iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
+    Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
 }
 
 Write-Host "Installing prerequisites via Chocolatey..."
@@ -26,6 +26,7 @@ Write-Host "Installing prerequisites via Chocolatey..."
 choco install `
     vcredist2012 `
     vcredist140 `
+    dotnet-8.0-runtime `
     -y --no-progress
 
 # ==========================
