@@ -1,3 +1,5 @@
+$OneDriveZipUrl = "https://1drv.ms/u/c/5ec0f8fbd7b1a668/IQBx2wO2Q10iTbPAFZsun2FXAVcOY5JRWXM7e9-xwj6yOB0?e=C3L5Iw"
+
 # ==========================
 # Prepare directories
 # ==========================
