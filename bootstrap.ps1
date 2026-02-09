@@ -27,9 +27,10 @@ choco install `
     vcredist2012 `
     vcredist140 `
     dotnet-8.0-runtime `
+    dotnet3.5 `
     -y --no-progress
 
-# ==========================
+    # ==========================
 # Download OneDriveLink
 # ==========================
 Write-Host "Downloading OneDriveLink..."
@@ -77,7 +78,10 @@ Expand-Archive `
 # Install game server
 # ==========================
 Set-Location '.\Portable BF-2021-08-13'
-.\Setup.exe /SILENT
+$setupProcess = Start-Process -FilePath '.\Setup.exe' -ArgumentList '/SILENT' -Wait -PassThru
+if ($setupProcess.ExitCode -ne 0) {
+  throw "Game server installation failed with exit code $($setupProcess.ExitCode)"
+}
 
 # ==========================
 # Start game server
@@ -85,20 +89,26 @@ Set-Location '.\Portable BF-2021-08-13'
 
 # Start Apache
 Start-Process "C:\BF-Portable\Xampp\apache\bin\httpd.exe"
+Start-Sleep -Seconds 10
 
 # Start MySQL
 Start-Process "C:\BF-Portable\Xampp\mysql\bin\mysqld.exe" -ArgumentList "--defaults-file=C:\BF-Portable\Xampp\mysql\bin\my.ini --standalone --console"
+Start-Sleep -Seconds 10
 
 # Start Redirector
 Start-Process "C:\BF-Portable\Redirector\gosredirector.ea.com.exe" -ArgumentList "/console"
+Start-Sleep -Seconds 10
 
 # Start BlazeServer
 Start-Process "C:\BF-Portable\EMU\BlazeServer.exe"
+Start-Sleep -Seconds 10
 
 # Start Battlefield 3 Server
 Start-Process "C:\BF-Portable\Battlefield_3_Server\_StartServer.bat" -WorkingDirectory "C:\BF-Portable\Battlefield_3_Server"
+Start-Sleep -Seconds 10
 
 # Start Battlefield 4 Server
 Start-Process "C:\BF-Portable\Battlefield_4_Server\!StartServer.bat" -WorkingDirectory "C:\BF-Portable\Battlefield_4_Server"
+Start-Sleep -Seconds 10
 
 Stop-Transcript

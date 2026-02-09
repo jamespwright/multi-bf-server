@@ -38,6 +38,28 @@ az vm create `
 Write-Host "Applying Custom Script Extension to VM $vmName..."
 $commandToExecute = "powershell -ExecutionPolicy Bypass -Command Invoke-WebRequest $bootstrapScriptUrl -OutFile C:\bootstrap.ps1; powershell -ExecutionPolicy Bypass -File C:\bootstrap.ps1"
 
+# ==========================
+# Open required ports
+# ==========================
+Write-Host "Opening required ports on VM $vmName..."
+$basePriority = 1100
+$ports = @(42128, 42129, 42127, 80, 443, 25100, 25300)
+for ($i = 0; $i -lt $ports.Count; $i++) {
+  $port = $ports[$i]
+  $priority = $basePriority + $i
+  az vm open-port --resource-group $resourceGroup --name $vmName --port $port --priority $priority
+}
+
+# ==========================
+# Disable Windows Defender Firewall
+# ==========================
+Write-Host "Disabling Windows Defender Firewall on VM $vmName..."
+az vm run-command invoke `
+  --resource-group $resourceGroup `
+  --name $vmName `
+  --command-id RunPowerShellScript `
+  --scripts "Set-NetFirewallProfile -Profile Domain,Public,Private -Enabled False"
+
 # Write settings JSON to a temp file to avoid quoting issues
 $settingsFile = Join-Path $env:TEMP ("settings_" + [guid]::NewGuid().ToString() + ".json")
 $settingsJson = @{commandToExecute = $commandToExecute} | ConvertTo-Json -Compress
