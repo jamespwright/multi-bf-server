@@ -12,7 +12,7 @@ $bootstrapScriptUrl = "https://raw.githubusercontent.com/jamespwright/multi-bf-s
 $oneDriveZipUrl = Read-Host -Prompt "Enter OneDrive direct download URL for game server zip file"
 # Escape single quotes in URL (if any) for use within single-quoted PowerShell string
 $escapedOneDriveZipUrl = $oneDriveZipUrl -replace "'", "''"
-<#
+
 az login
 
 # ==========================
@@ -34,12 +34,11 @@ az vm create `
   --admin-username $adminUser `
   --admin-password $adminPasswordPlain `
   --public-ip-sku Standard
-#>
+
 # ==========================
 # Apply Custom Script Extension
 # ==========================
 Write-Host "Applying Custom Script Extension to VM $vmName..."
-$ExecutionId = [Guid]::NewGuid().ToString()
 $commandToExecute = "powershell -ExecutionPolicy Bypass -Command Invoke-WebRequest $bootstrapScriptUrl -OutFile C:\bootstrap.ps1; powershell -ExecutionPolicy Bypass -File C:\bootstrap.ps1"
 
 # Compress JSON and escape quotes for Azure CLI compatibility
