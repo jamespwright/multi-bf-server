@@ -1,5 +1,5 @@
 $OneDriveZipUrl = "https://1drv.ms/u/c/5ec0f8fbd7b1a668/IQBx2wO2Q10iTbPAFZsun2FXAVcOY5JRWXM7e9-xwj6yOB0?e=C3L5Iw"
-$OneDriveURLConverter = "https://github.com/Kobi-Blade/OneDriveLink/releases/download/v1.1.0/OneDriveLink.zip"
+$OneDriveURLConverter = "https://github.com/Kobi-Blade/OneDriveLink/releases/download/v1.0.4/OneDriveLink.zip"
 
 # ==========================
 # Prepare directories
@@ -26,7 +26,6 @@ Write-Host "Installing prerequisites via Chocolatey..."
 choco install `
     vcredist2012 `
     vcredist140 `
-    choco install choco install dotnet-10.0-runtime `
     -y --no-progress
 
 # ==========================
@@ -72,6 +71,35 @@ Expand-Archive `
   -Path "server.zip" `
   -DestinationPath $installRoot `
   -Force
+
+# ==========================
+# Install game server
+# ==========================
+Set-Location '.\Portable BF-2021-08-13'
+.\Setup.exe /SILENT
+
+# ==========================
+# Start game server
+# ==========================
+
+# Start Apache
+Start-Process "C:\BF-Portable\Xampp\apache\bin\httpd.exe"
+
+# Start MySQL
+Start-Process "C:\BF-Portable\Xampp\mysql\bin\mysqld.exe" -ArgumentList "--defaults-file=C:\BF-Portable\Xampp\mysql\bin\my.ini --standalone --console"
+
+# Start Redirector
+Start-Process "C:\BF-Portable\Redirector\gosredirector.ea.com.exe" -ArgumentList "/console"
+
+# Start BlazeServer
+Start-Process "C:\BF-Portable\EMU\BlazeServer.exe"
+
+# Start Battlefield 3 Server
+Start-Process "C:\BF-Portable\Battlefield_3_Server\_StartServer.bat" -WorkingDirectory "C:\BF-Portable\Battlefield_3_Server"
+
+# Start Battlefield 4 Server
+Start-Process "C:\BF-Portable\Battlefield_4_Server\!StartServer.bat" -WorkingDirectory "C:\BF-Portable\Battlefield_4_Server"
+
 
 # ==========================
 # Cleanup
