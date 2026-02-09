@@ -1,48 +1,65 @@
-$OneDriveZipUrl = "https://1drv.ms/u/c/5ec0f8fbd7b1a668/IQC1rdQgon0pSK9kTXb_8Nl3Ac6lhu3jmuHVBgYdaqLRVyM?e=BDQbMO"
-$OneDriveURLConverter = "https://github.com/Kobi-Blade/OneDriveLink/releases/download/v1.1.0/OneDriveLink.zip"
-
-$ErrorActionPreference = "Stop"
-Write-Host "Bootstrap script started with ExecutionId: $ExecutionId"
-
 # ==========================
 # Prepare directories
 # ==========================
 $installRoot = "C:\GameServer"
+New-Item -ItemType Directory -Force -Path $installRoot | Out-Null
 Start-Transcript -Path "$installRoot\bootstrap.log" -Append
-New-Item -ItemType Directory -Force -Path $installRoot
 Set-Location $installRoot
 
-# ==========================
-# Download OneDriveURLConverter
-# ==========================
-Write-Host "Downloading OneDriveURLConverter..."
-Invoke-WebRequest `
-  -Uri $OneDriveURLConverter `
-  -OutFile "OneDriveLink.zip" `
-  -UseBasicParsing
+Write-Host "Bootstrap script started..."
 
 # ==========================
-# Extract OneDriveURLConverter
+# Install Chocolatey and prerequisites
 # ==========================
-Write-Host "Extracting OneDriveURLConverter..."
+if (-not (Get-Command choco -ErrorAction SilentlyContinue)) {
+    Write-Host "Installing Chocolatey..."
+    Set-ExecutionPolicy Bypass -Scope Process -Force
+    [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.SecurityProtocolType]::Tls12
+    iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
+}
+
+Write-Host "Installing prerequisites via Chocolatey..."
+
+choco install `
+    vcredist2012 `
+    vcredist140 `
+    choco install choco install dotnet-10.0-runtime `
+    -y --no-progress
+
+# ==========================
+# Download OneDriveLink
+# ==========================
+Write-Host "Downloading OneDriveLink..."
+Invoke-WebRequest `
+  -Uri $OneDriveURLConverter `
+  -OutFile "OneDriveLink.zip"
+
+# ==========================
+# Extract OneDriveLink
+# ==========================
+Write-Host "Extracting OneDriveLink..."
 Expand-Archive `
   -Path "OneDriveLink.zip" `
   -DestinationPath $installRoot `
   -Force
 
 # ==========================
-# Get OneDriveURL
+# Generate direct OneDrive download URL
 # ==========================
+Write-Host "Generating OneDrive direct download URL..."
 $OneDriveDownloadUrl = .\OneDriveLink.exe $OneDriveZipUrl
+
+if (-not $OneDriveDownloadUrl) {
+    throw "Failed to generate OneDrive download URL"
+}
 
 # ==========================
 # Download game server files
 # ==========================
-Write-Host "Downloading game server from OneDrive..."
+Write-Host "Downloading game server files..."
 Invoke-WebRequest `
   -Uri $OneDriveDownloadUrl `
-  -OutFile "server.zip" `
-  -UseBasicParsing
+  -OutFile "server.zip"
 
 # ==========================
 # Extract game server files
@@ -56,6 +73,7 @@ Expand-Archive `
 # ==========================
 # Cleanup
 # ==========================
-Remove-Item -Path "server.zip" -Force
+Remove-Item "server.zip","OneDriveLink.zip" -Force -ErrorAction SilentlyContinue
+
 Write-Host "Bootstrap complete. Game server files are located at $installRoot"
 Stop-Transcript
