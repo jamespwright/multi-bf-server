@@ -100,11 +100,4 @@ Start-Process "C:\BF-Portable\Battlefield_3_Server\_StartServer.bat" -WorkingDir
 # Start Battlefield 4 Server
 Start-Process "C:\BF-Portable\Battlefield_4_Server\!StartServer.bat" -WorkingDirectory "C:\BF-Portable\Battlefield_4_Server"
 
-
-# ==========================
-# Cleanup
-# ==========================
-Remove-Item "server.zip","OneDriveLink.zip" -Force -ErrorAction SilentlyContinue
-
-Write-Host "Bootstrap complete. Game server files are located at $installRoot"
 Stop-Transcript
