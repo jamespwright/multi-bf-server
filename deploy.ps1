@@ -10,6 +10,38 @@ $adminPassword = Read-Host -Prompt "Enter admin password" -AsSecureString
 $adminPasswordPlain = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($adminPassword))
 $bootstrapScriptUrl = "https://raw.githubusercontent.com/jamespwright/multi-bf-server/main/bootstrap.ps1"
 
+# ==========================
+# Function to set environment variable on remote VM
+# ==========================
+function Set-RemoteEnvironmentVariable {
+  param(
+      [Parameter(Mandatory=$true)]
+      [string]$ResourceGroup,
+      
+      [Parameter(Mandatory=$true)]
+      [string]$VMName,
+      
+      [Parameter(Mandatory=$true)]
+      [string]$Name,
+      
+      [Parameter(Mandatory=$true)]
+      [string]$Value
+  )
+$script = @"
+[System.Environment]::SetEnvironmentVariable('$Name', '$Value', [System.EnvironmentVariableTarget]::Machine)
+"@
+
+  Write-Host "Setting $Name on VM $VMName..."
+
+  az vm run-command invoke `
+      --resource-group $ResourceGroup `
+      --name $VMName `
+      --command-id RunPowerShellScript `
+      --scripts $script
+}
+# ==========================
+# Main Script
+# ==========================
 az login
 
 # ==========================
@@ -32,11 +64,6 @@ az vm create `
   --admin-password $adminPasswordPlain `
   --public-ip-sku Standard
 
-# ==========================
-# Apply Custom Script Extension
-# ==========================
-Write-Host "Applying Custom Script Extension to VM $vmName..."
-$commandToExecute = "powershell -ExecutionPolicy Bypass -Command Invoke-WebRequest $bootstrapScriptUrl -OutFile C:\bootstrap.ps1; powershell -ExecutionPolicy Bypass -File C:\bootstrap.ps1"
 
 # ==========================
 # Open required ports
@@ -60,14 +87,22 @@ az vm run-command invoke `
   --command-id RunPowerShellScript `
   --scripts "Set-NetFirewallProfile -Profile Domain,Public,Private -Enabled False"
 
-# Write settings JSON to a temp file to avoid quoting issues
-$settingsFile = Join-Path $env:TEMP ("settings_" + [guid]::NewGuid().ToString() + ".json")
+# ==========================
+# Set environment variables for game server configuration
+# ==========================
+Set-RemoteEnvironmentVariable -ResourceGroup $resourceGroup -VMName $vmName -Name "ONEDRIVE_ZIP_URL" -Value $env:ONEDRIVE_ZIP_URL
+Set-RemoteEnvironmentVariable -ResourceGroup $resourceGroup -VMName $vmName -Name "ONEDRIVE_URL_CONVERTER" -Value "https://github.com/Kobi-Blade/OneDriveLink/releases/download/v1.0.4/OneDriveLink.zip"
+
+# ==========================
+# Install Game Server Extension
+# ==========================
+Write-Host "Installing Game Server Extension on VM $vmName..."
+$commandToExecute = "powershell -ExecutionPolicy Bypass -Command Invoke-WebRequest $bootstrapScriptUrl -OutFile C:\bootstrap.ps1; powershell -ExecutionPolicy Bypass -File C:\bootstrap.ps1"
 $settingsJson = @{commandToExecute = $commandToExecute} | ConvertTo-Json -Compress
-$settingsJson | Set-Content -Path $settingsFile -Encoding UTF8
 
 az vm extension set `
   --resource-group $resourceGroup `
   --vm-name $vmName `
   --name CustomScriptExtension `
   --publisher Microsoft.Compute `
-  --settings @$settingsFile
+  --settings $settingsJson
