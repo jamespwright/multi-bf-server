@@ -1,5 +1,9 @@
-$OneDriveZipUrl = $env:ONEDRIVE_ZIP_URL
-$OneDriveURLConverter = $env:ONEDRIVE_URL_CONVERTER
+param(
+    [Parameter(Mandatory=$true)]
+    [string]$OneDriveZipUrl,
+    [Parameter(Mandatory=$true)]
+    [string]$OneDriveURLConverter
+)
 
 # ==========================
 # Prepare directories

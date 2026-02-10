@@ -27,9 +27,6 @@ function Set-RemoteEnvironmentVariable {
       [Parameter(Mandatory=$true)]
       [string]$Value
   )
-$script = @"
-[System.Environment]::SetEnvironmentVariable('$Name', '$Value', [System.EnvironmentVariableTarget]::Machine)
-"@
 
   Write-Host "Setting $Name on VM $VMName..."
 
@@ -37,7 +34,7 @@ $script = @"
       --resource-group $ResourceGroup `
       --name $VMName `
       --command-id RunPowerShellScript `
-      --scripts $script
+      --scripts "[System.Environment]::SetEnvironmentVariable('$Name', '$Value', [System.EnvironmentVariableTarget]::Machine)"
 }
 # ==========================
 # Main Script
@@ -90,19 +87,16 @@ az vm run-command invoke `
 # ==========================
 # Set environment variables for game server configuration
 # ==========================
-Set-RemoteEnvironmentVariable -ResourceGroup $resourceGroup -VMName $vmName -Name "ONEDRIVE_ZIP_URL" -Value $env:ONEDRIVE_ZIP_URL
-Set-RemoteEnvironmentVariable -ResourceGroup $resourceGroup -VMName $vmName -Name "ONEDRIVE_URL_CONVERTER" -Value "https://github.com/Kobi-Blade/OneDriveLink/releases/download/v1.0.4/OneDriveLink.zip"
+#Set-RemoteEnvironmentVariable -ResourceGroup $resourceGroup -VMName $vmName -Name "ONEDRIVE_ZIP_URL" -Value $env:ONEDRIVE_ZIP_URL
+#Set-RemoteEnvironmentVariable -ResourceGroup $resourceGroup -VMName $vmName -Name "ONEDRIVE_URL_CONVERTER" -Value "https://github.com/Kobi-Blade/OneDriveLink/releases/download/v1.0.4/OneDriveLink.zip"
 
 # ==========================
 # Install Game Server Extension
 # ==========================
 Write-Host "Installing Game Server Extension on VM $vmName..."
-$commandToExecute = "powershell -ExecutionPolicy Bypass -Command Invoke-WebRequest $bootstrapScriptUrl -OutFile C:\bootstrap.ps1; powershell -ExecutionPolicy Bypass -File C:\bootstrap.ps1"
-$settingsJson = @{commandToExecute = $commandToExecute} | ConvertTo-Json -Compress
 
-az vm extension set `
+az vm run-command invoke `
   --resource-group $resourceGroup `
-  --vm-name $vmName `
-  --name CustomScriptExtension `
-  --publisher Microsoft.Compute `
-  --settings $settingsJson
+  --name $vmName `
+  --command-id RunPowerShellScript `
+  --scripts "Invoke-WebRequest $bootstrapScriptUrl -OutFile C:\bootstrap.ps1; powershell -ExecutionPolicy Bypass -File C:\bootstrap.ps1 -OneDriveZipUrl '$env:ONEDRIVE_ZIP_URL' -OneDriveURLConverter '$env:ONEDRIVE_URL_CONVERTER'"
