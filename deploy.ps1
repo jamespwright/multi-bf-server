@@ -11,6 +11,10 @@ $adminPasswordPlain = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtim
 $bootstrapScriptUrl = "https://raw.githubusercontent.com/jamespwright/multi-bf-server/main/bootstrap.ps1"
 $OneDriveURLConverter = "https://github.com/Kobi-Blade/OneDriveLink/releases/download/v1.0.4/OneDriveLink.zip"
 
+if (-not $env:ONEDRIVE_ZIP_URL) {
+    $env:ONEDRIVE_ZIP_URL = Read-Host "Enter the OneDrive ZIP URL"
+}
+
 
 # ==========================
 # Login to Azure
