@@ -9,41 +9,19 @@ $adminUser     = "azureuser"
 $adminPassword = Read-Host -Prompt "Enter admin password" -AsSecureString
 $adminPasswordPlain = [Runtime.InteropServices.Marshal]::PtrToStringAuto([Runtime.InteropServices.Marshal]::SecureStringToBSTR($adminPassword))
 $bootstrapScriptUrl = "https://raw.githubusercontent.com/jamespwright/multi-bf-server/main/bootstrap.ps1"
+$OneDriveURLConverter = "https://github.com/Kobi-Blade/OneDriveLink/releases/download/v1.0.4/OneDriveLink.zip"
+
 
 # ==========================
-# Function to set environment variable on remote VM
+# Login to Azure
 # ==========================
-function Set-RemoteEnvironmentVariable {
-  param(
-      [Parameter(Mandatory=$true)]
-      [string]$ResourceGroup,
-      
-      [Parameter(Mandatory=$true)]
-      [string]$VMName,
-      
-      [Parameter(Mandatory=$true)]
-      [string]$Name,
-      
-      [Parameter(Mandatory=$true)]
-      [string]$Value
-  )
 
-  Write-Host "Setting $Name on VM $VMName..."
-
-  az vm run-command invoke `
-      --resource-group $ResourceGroup `
-      --name $VMName `
-      --command-id RunPowerShellScript `
-      --scripts "[System.Environment]::SetEnvironmentVariable('$Name', '$Value', [System.EnvironmentVariableTarget]::Machine)"
-}
-# ==========================
-# Main Script
-# ==========================
 az login
 
 # ==========================
 # Create Resource Group
 # ==========================
+
 az group create `
   --name $resourceGroup `
   --location $location
@@ -51,6 +29,7 @@ az group create `
 # ==========================
 # Create VM
 # ==========================
+
 Write-Host "Creating VM $vmName in resource group $resourceGroup..."
 az vm create `
   --resource-group $resourceGroup `
@@ -61,10 +40,10 @@ az vm create `
   --admin-password $adminPasswordPlain `
   --public-ip-sku Standard
 
-
 # ==========================
 # Open required ports
 # ==========================
+
 Write-Host "Opening required ports on VM $vmName..."
 $basePriority = 1100
 $ports = @(42128, 42129, 42127, 80, 443, 25100, 25300)
@@ -77,6 +56,7 @@ for ($i = 0; $i -lt $ports.Count; $i++) {
 # ==========================
 # Disable Windows Defender Firewall
 # ==========================
+
 Write-Host "Disabling Windows Defender Firewall on VM $vmName..."
 az vm run-command invoke `
   --resource-group $resourceGroup `
@@ -85,18 +65,13 @@ az vm run-command invoke `
   --scripts "Set-NetFirewallProfile -Profile Domain,Public,Private -Enabled False"
 
 # ==========================
-# Set environment variables for game server configuration
+# Install Game Server
 # ==========================
-#Set-RemoteEnvironmentVariable -ResourceGroup $resourceGroup -VMName $vmName -Name "ONEDRIVE_ZIP_URL" -Value $env:ONEDRIVE_ZIP_URL
-#Set-RemoteEnvironmentVariable -ResourceGroup $resourceGroup -VMName $vmName -Name "ONEDRIVE_URL_CONVERTER" -Value "https://github.com/Kobi-Blade/OneDriveLink/releases/download/v1.0.4/OneDriveLink.zip"
 
-# ==========================
-# Install Game Server Extension
-# ==========================
-Write-Host "Installing Game Server Extension on VM $vmName..."
+Write-Host "Installing Game Server on VM $vmName..."
 
 az vm run-command invoke `
   --resource-group $resourceGroup `
   --name $vmName `
   --command-id RunPowerShellScript `
-  --scripts "Invoke-WebRequest $bootstrapScriptUrl -OutFile C:\bootstrap.ps1; powershell -ExecutionPolicy Bypass -File C:\bootstrap.ps1 -OneDriveZipUrl '$env:ONEDRIVE_ZIP_URL' -OneDriveURLConverter '$env:ONEDRIVE_URL_CONVERTER'"
+  --scripts "Invoke-WebRequest $bootstrapScriptUrl -OutFile C:\bootstrap.ps1; powershell -ExecutionPolicy Bypass -File C:\bootstrap.ps1 -OneDriveZipUrl '$env:ONEDRIVE_ZIP_URL' -OneDriveURLConverter '$OneDriveURLConverter'"

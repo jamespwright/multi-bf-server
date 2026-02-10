@@ -32,9 +32,9 @@ choco install `
     vcredist140 `
     dotnet-8.0-runtime `
     dotnet3.5 `
-    -y --no-progress
+    -y
 
-    # ==========================
+# ==========================
 # Download OneDriveLink
 # ==========================
 Write-Host "Downloading OneDriveLink..."
@@ -65,9 +65,10 @@ if (-not $OneDriveDownloadUrl) {
 # Download game server files
 # ==========================
 Write-Host "Downloading game server files..."
-Invoke-WebRequest `
-  -Uri $OneDriveDownloadUrl `
-  -OutFile "server.zip"
+
+Start-BitsTransfer `
+  -Source $OneDriveDownloadUrl `
+  -Destination "server.zip"
 
 # ==========================
 # Extract game server files
@@ -81,6 +82,7 @@ Expand-Archive `
 # ==========================
 # Install game server
 # ==========================
+Write-Host "Installing game server..."
 Set-Location '.\Portable BF-2021-08-13'
 $setupProcess = Start-Process -FilePath '.\Setup.exe' -ArgumentList '/SILENT' -Wait -PassThru
 if ($setupProcess.ExitCode -ne 0) {
@@ -90,29 +92,26 @@ if ($setupProcess.ExitCode -ne 0) {
 # ==========================
 # Start game server
 # ==========================
+Write-Host "Starting game server..."
 
 # Start Apache
 Start-Process "C:\BF-Portable\Xampp\apache\bin\httpd.exe"
-Start-Sleep -Seconds 10
 
 # Start MySQL
 Start-Process "C:\BF-Portable\Xampp\mysql\bin\mysqld.exe" -ArgumentList "--defaults-file=C:\BF-Portable\Xampp\mysql\bin\my.ini --standalone --console"
-Start-Sleep -Seconds 10
 
 # Start Redirector
 Start-Process "C:\BF-Portable\Redirector\gosredirector.ea.com.exe" -ArgumentList "/console"
-Start-Sleep -Seconds 10
+Start-Sleep -Seconds 5
 
 # Start BlazeServer
 Start-Process "C:\BF-Portable\EMU\BlazeServer.exe"
-Start-Sleep -Seconds 10
+Start-Sleep -Seconds 5
 
 # Start Battlefield 3 Server
 Start-Process "C:\BF-Portable\Battlefield_3_Server\_StartServer.bat" -WorkingDirectory "C:\BF-Portable\Battlefield_3_Server"
-Start-Sleep -Seconds 10
 
 # Start Battlefield 4 Server
 Start-Process "C:\BF-Portable\Battlefield_4_Server\!StartServer.bat" -WorkingDirectory "C:\BF-Portable\Battlefield_4_Server"
-Start-Sleep -Seconds 10
 
 Stop-Transcript
